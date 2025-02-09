@@ -10,6 +10,7 @@ import { FleetView } from './views/fleet-view'
 import { AgentsView } from './views/agents-view'
 import { AnalyticsView } from './views/analytics-view'
 import { AgentInterface } from '../agent/AgentInterface'
+import { CommandHelp } from '../command-help/command-help'
 
 interface MetricCard {
   title: string
@@ -411,7 +412,7 @@ export default function DashboardFeature() {
   return (
     <div className="space-y-6">
       <div className="w-full max-w-6xl mx-auto flex gap-6">
-        <div className="w-2/3">
+        <div className="w-1/2">
           <AgentInterface 
             onDeployAgent={() => setShowDeployModal(true)}
             onConfigureAgent={(agentId) => {
@@ -425,34 +426,8 @@ export default function DashboardFeature() {
             alerts={alerts}
           />
         </div>
-        <div className="w-1/3 card bg-base-200 p-4 self-start">
-          <h3 className="font-bold mb-2">Available Commands</h3>
-          <ul className="space-y-2 text-sm">
-            <li>
-              <span className="font-mono text-primary">deploy agent</span>
-              <p className="text-xs opacity-70">Deploy a new AI agent</p>
-            </li>
-            <li>
-              <span className="font-mono text-primary">configure agent [name]</span>
-              <p className="text-xs opacity-70">Configure an existing agent</p>
-            </li>
-            <li>
-              <span className="font-mono text-primary">view logs [name]</span>
-              <p className="text-xs opacity-70">View agent activity logs</p>
-            </li>
-            <li>
-              <span className="font-mono text-primary">list agents</span>
-              <p className="text-xs opacity-70">Show all active agents</p>
-            </li>
-            <li>
-              <span className="font-mono text-primary">alerts</span>
-              <p className="text-xs opacity-70">Show current system alerts</p>
-            </li>
-            <li>
-              <span className="font-mono text-primary">status</span>
-              <p className="text-xs opacity-70">Get current system status</p>
-            </li>
-          </ul>
+        <div className="w-1/2">
+          <CommandHelp />
         </div>
       </div>
       <TabView tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />

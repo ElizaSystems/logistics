@@ -128,6 +128,70 @@ export function AgentInterface({
           `${metric.title}: ${metric.value} (${metric.change > 0 ? '+' : ''}${metric.change}% ${metric.timeframe})`
         ).join('\n')
       }
+    },
+    {
+      command: 'create order',
+      description: 'Create a new logistics order (usage: create order <product-id> <quantity> <destination>)',
+      handler: () => {
+        // TODO: Integrate with OrdersContext
+        return 'Order creation system coming soon...'
+      }
+    },
+    {
+      command: 'track order',
+      description: 'Track order status (usage: track order <order-id>)',
+      handler: () => {
+        // TODO: Integrate with OrdersContext
+        return 'Order tracking system coming soon...'
+      }
+    },
+    {
+      command: 'stock check',
+      description: 'Check stock levels (usage: stock check <product-id>)',
+      handler: () => {
+        // TODO: Integrate with InventoryContext
+        return 'Stock checking system coming soon...'
+      }
+    },
+    {
+      command: 'restock',
+      description: 'Request restock for low inventory (usage: restock <product-id> <quantity>)',
+      handler: () => {
+        // TODO: Integrate with InventoryContext
+        return 'Restock request system coming soon...'
+      }
+    },
+    {
+      command: 'assign vehicle',
+      description: 'Assign vehicle to delivery (usage: assign vehicle <vehicle-id> <order-id>)',
+      handler: () => {
+        // TODO: Integrate with FleetContext
+        return 'Vehicle assignment system coming soon...'
+      }
+    },
+    {
+      command: 'vehicle status',
+      description: 'Check vehicle status (usage: vehicle status <vehicle-id>)',
+      handler: () => {
+        // TODO: Integrate with FleetContext
+        return 'Vehicle status system coming soon...'
+      }
+    },
+    {
+      command: 'optimize routes',
+      description: 'Optimize delivery routes for active orders',
+      handler: () => {
+        // TODO: Integrate with RouteOptimizationService
+        return 'Route optimization initiated...'
+      }
+    },
+    {
+      command: 'warehouse capacity',
+      description: 'Check warehouse capacity and utilization',
+      handler: () => {
+        // TODO: Integrate with WarehouseContext
+        return 'Warehouse capacity check system coming soon...'
+      }
     }
   ]
 
@@ -135,9 +199,37 @@ export function AgentInterface({
     const lowerInput = input.toLowerCase()
     
     if (lowerInput === 'help') {
-      return commands
-        .map(cmd => `${cmd.command}: ${cmd.description}`)
-        .join('\n')
+      const categories = {
+        'Agent Management': commands.filter(cmd => 
+          ['deploy agent', 'configure agent', 'view logs', 'list agents'].includes(cmd.command)
+        ),
+        'System Status': commands.filter(cmd => 
+          ['status', 'alerts'].includes(cmd.command)
+        ),
+        'Navigation': commands.filter(cmd => 
+          ['inventory', 'fleet', 'warehouses', 'analytics'].includes(cmd.command)
+        ),
+        'Order Management': commands.filter(cmd => 
+          ['create order', 'track order'].includes(cmd.command)
+        ),
+        'Inventory Control': commands.filter(cmd => 
+          ['stock check', 'restock'].includes(cmd.command)
+        ),
+        'Fleet Operations': commands.filter(cmd => 
+          ['assign vehicle', 'vehicle status', 'optimize routes'].includes(cmd.command)
+        ),
+        'Warehouse Operations': commands.filter(cmd => 
+          ['warehouse capacity'].includes(cmd.command)
+        )
+      }
+
+      return Object.entries(categories)
+        .map(([category, cmds]) => 
+          `${category}:\n${cmds
+            .map(cmd => `  ${cmd.command}: ${cmd.description}`)
+            .join('\n')}`
+        )
+        .join('\n\n')
     }
 
     const matchedCommand = commands.find(cmd => 
