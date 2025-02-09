@@ -6,11 +6,46 @@ import { AppHero } from '../ui/ui-layout'
 interface Agent {
   id: string
   name: string
-  type: 'inventory' | 'routing' | 'forecasting' | 'maintenance'
-  status: 'active' | 'idle' | 'learning'
+  type: string
+  status: string
   performance: number
   lastAction: string
   nextAction: string
+}
+
+function AgentCard({ agent }: { agent: Agent }) {
+  return (
+    <div className="card bg-base-200 shadow-xl">
+      <div className="card-body">
+        <h3 className="card-title">{agent.name}</h3>
+        <div className="badge badge-primary">{agent.type}</div>
+        <div className={`badge ${
+          agent.status === 'active' ? 'badge-success' : 'badge-warning'
+        }`}>
+          {agent.status}
+        </div>
+        <div className="mt-4">
+          <div className="text-sm opacity-70">Performance</div>
+          <div className="flex items-center gap-2">
+            <progress 
+              className="progress progress-success w-full" 
+              value={agent.performance} 
+              max="100"
+            ></progress>
+            <span>{agent.performance}%</span>
+          </div>
+        </div>
+        <div className="mt-4">
+          <div className="text-sm opacity-70">Last Action</div>
+          <div>{agent.lastAction}</div>
+        </div>
+        <div className="mt-2">
+          <div className="text-sm opacity-70">Next Action</div>
+          <div>{agent.nextAction}</div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function AgentsFeature() {
@@ -51,33 +86,16 @@ export default function AgentsFeature() {
       <div className="card bg-base-200">
         <div className="card-body">
           <h2 className="card-title">Agent Performance Analytics</h2>
-          <AgentPerformanceChart agents={agents} />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function AgentCard({ agent }: { agent: Agent }) {
-  return (
-    <div className="card bg-base-200 shadow-xl">
-      <div className="card-body">
-        <div className="flex justify-between items-center">
-          <h2 className="card-title">{agent.name}</h2>
-          <div className={`badge ${getStatusBadgeColor(agent.status)}`}>
-            {agent.status}
+          <div className="flex flex-col gap-4">
+            <div className="stats shadow">
+              <div className="stat">
+                <div className="stat-title">Average Performance</div>
+                <div className="stat-value">
+                  {Math.round(agents.reduce((acc, agent) => acc + agent.performance, 0) / agents.length)}%
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-        <p className="text-sm">Type: {agent.type}</p>
-        <p className="text-sm">Performance: {agent.performance}%</p>
-        <div className="divider"></div>
-        <div>
-          <p className="text-sm font-semibold">Last Action:</p>
-          <p className="text-sm">{agent.lastAction}</p>
-        </div>
-        <div>
-          <p className="text-sm font-semibold">Next Action:</p>
-          <p className="text-sm">{agent.nextAction}</p>
         </div>
       </div>
     </div>
