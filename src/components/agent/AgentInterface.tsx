@@ -7,6 +7,7 @@ import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa'
 interface ChatMessage {
   sender: 'bot' | 'user'
   message: string
+  timestamp: Date
 }
 
 interface AgentCommand {
@@ -38,6 +39,7 @@ export function AgentInterface({
   const [isListening, setIsListening] = useState(false)
   const [isSpeechSupported, setIsSpeechSupported] = useState(false)
   const recognitionRef = useRef<any>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -360,10 +362,15 @@ export function AgentInterface({
   const handleSend = () => {
     if (!input.trim()) return
 
-    const userMessage: ChatMessage = { sender: 'user', message: input }
+    const userMessage: ChatMessage = { 
+      sender: 'user', 
+      message: input,
+      timestamp: new Date()
+    }
     const botResponse: ChatMessage = { 
       sender: 'bot', 
-      message: processCommand(input)
+      message: processCommand(input),
+      timestamp: new Date()
     }
 
     setMessages(prev => [...prev, userMessage, botResponse])
@@ -389,6 +396,14 @@ export function AgentInterface({
     setIsListening(!isListening)
   }
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
   const ChatContent = () => (
     <>
       <div className={`flex-grow overflow-y-auto p-4 bg-base-200 rounded-lg mb-4 ${
@@ -398,9 +413,13 @@ export function AgentInterface({
           <div key={index} className={`chat ${msg.sender === 'bot' ? 'chat-start' : 'chat-end'} mb-2`}>
             <div className={`chat-bubble ${msg.sender === 'bot' ? 'chat-bubble-primary' : 'chat-bubble-secondary'}`}>
               <pre className="whitespace-pre-wrap text-sm">{msg.message}</pre>
+              <div className="text-xs opacity-50 mt-1">
+                {new Date().toLocaleTimeString()}
+              </div>
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
       <div className="flex gap-2">
         <input
@@ -417,13 +436,15 @@ export function AgentInterface({
           className="input input-bordered flex-grow"
           autoComplete="off"
         />
-        <button
-          onClick={toggleListening}
-          className={`btn ${isListening ? 'btn-error' : 'btn-primary'}`}
-          title={isListening ? 'Stop listening' : 'Start voice input'}
-        >
-          {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
-        </button>
+        {isSpeechSupported && (
+          <button
+            onClick={toggleListening}
+            className={`btn ${isListening ? 'btn-error' : 'btn-primary'}`}
+            title={isListening ? 'Stop listening' : 'Start voice input'}
+          >
+            {isListening ? <FaMicrophoneSlash className="h-5 w-5" /> : <FaMicrophone className="h-5 w-5" />}
+          </button>
+        )}
         <button onClick={handleSend} className="btn btn-primary">
           Send
         </button>
