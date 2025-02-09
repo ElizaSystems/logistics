@@ -1,18 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import {usePathname} from 'next/navigation'
-import * as React from 'react'
-import {ReactNode, Suspense, useEffect, useRef} from 'react'
-import toast, {Toaster} from 'react-hot-toast'
+import { ReactNode, Suspense, useRef, useEffect } from 'react'
+import { Toaster, toast } from 'react-hot-toast'
+import { AccountChecker } from '../account/account-ui'
+import { ClusterChecker, ClusterUiSelect } from '../cluster/cluster-ui'
+import { WalletButton } from '../solana/solana-provider'
+import { ExplorerLink } from '../cluster/cluster-ui'
 
-import {AccountChecker} from '../account/account-ui'
-import {ClusterChecker, ClusterUiSelect, ExplorerLink} from '../cluster/cluster-ui'
-import {WalletButton} from '../solana/solana-provider'
-
-export function UiLayout({ children, links }: { children: ReactNode; links: { label: string; path: string }[] }) {
-  const pathname = usePathname()
-
+export function UiLayout({ children }: { children: ReactNode }) {
   return (
     <div className="h-full flex flex-col">
       <div className="navbar bg-base-300 dark:text-neutral-content flex-col md:flex-row space-y-2 md:space-y-0">
@@ -20,15 +16,6 @@ export function UiLayout({ children, links }: { children: ReactNode; links: { la
           <Link className="btn btn-ghost normal-case text-xl" href="/">
             Logistics
           </Link>
-          <ul className="menu menu-horizontal px-1 space-x-2">
-            {links.map(({ label, path }) => (
-              <li key={path}>
-                <Link className={pathname.startsWith(path) ? 'active' : ''} href={path}>
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
         </div>
         <div className="flex-none space-x-2">
           <WalletButton />
@@ -38,7 +25,7 @@ export function UiLayout({ children, links }: { children: ReactNode; links: { la
       <ClusterChecker>
         <AccountChecker />
       </ClusterChecker>
-      <div className="flex-grow mx-4 lg:mx-auto">
+      <div className="flex-grow mx-4 lg:mx-auto lg:max-w-7xl w-full">
         <Suspense
           fallback={
             <div className="text-center my-32">
@@ -86,8 +73,8 @@ export function AppModal({
   submitDisabled?: boolean
   submitLabel?: string
 }) {
-  const dialogRef = useRef<HTMLDialogElement | null>(null)
-
+  const dialogRef = useRef<HTMLDialogElement>(null)
+  
   useEffect(() => {
     if (!dialogRef.current) return
     if (show) {
@@ -95,7 +82,7 @@ export function AppModal({
     } else {
       dialogRef.current.close()
     }
-  }, [show, dialogRef])
+  }, [show])
 
   return (
     <dialog className="modal" ref={dialogRef}>
@@ -151,10 +138,11 @@ export function ellipsify(str = '', len = 4) {
 export function useTransactionToast() {
   return (signature: string) => {
     toast.success(
-      <div className={'text-center'}>
+      <div className="text-center">
         <div className="text-lg">Transaction sent</div>
-        <ExplorerLink path={`tx/${signature}`} label={'View Transaction'} className="btn btn-xs btn-primary" />
+        <ExplorerLink path={`tx/${signature}`} label="View Transaction" className="btn btn-xs btn-primary" />
       </div>,
     )
   }
 }
+
