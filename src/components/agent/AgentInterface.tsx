@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { FaMicrophone, FaMicrophoneSlash } from 'react-icons/fa'
 
 interface ChatMessage {
   sender: 'bot' | 'user'
@@ -34,6 +35,9 @@ export function AgentInterface({
   const [input, setInput] = useState('')
   const [isExpanded, setIsExpanded] = useState(false)
   const [formattedMetrics, setFormattedMetrics] = useState<string[]>([])
+  const [isListening, setIsListening] = useState(false)
+  const [isSpeechSupported, setIsSpeechSupported] = useState(false)
+  const recognitionRef = useRef<any>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -46,6 +50,76 @@ export function AgentInterface({
       setFormattedMetrics(formatted)
     }
   }, [metrics])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+      setIsSpeechSupported(!!SpeechRecognition)
+      
+      if (SpeechRecognition) {
+        try {
+          recognitionRef.current = new SpeechRecognition()
+          recognitionRef.current.continuous = false
+          recognitionRef.current.interimResults = false
+          recognitionRef.current.lang = 'en-US' // Set language explicitly
+          
+          recognitionRef.current.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript
+            setInput(transcript)
+            handleSend()
+          }
+
+          recognitionRef.current.onerror = (event: any) => {
+            switch (event.error) {
+              case 'network':
+                console.error('Network error occurred. Please check your internet connection.')
+                break
+              case 'not-allowed':
+              case 'permission-denied':
+                console.error('Microphone permission is required for speech recognition.')
+                setIsSpeechSupported(false)
+                break
+              case 'no-speech':
+                // Ignore no-speech error as it's common
+                break
+              default:
+                console.error('Speech recognition error:', event.error)
+            }
+            setIsListening(false)
+          }
+
+          recognitionRef.current.onend = () => {
+            setIsListening(false)
+          }
+
+          // Test the connection
+          navigator.permissions.query({ name: 'microphone' as PermissionName })
+            .then(result => {
+              if (result.state === 'denied') {
+                setIsSpeechSupported(false)
+              }
+            })
+            .catch(error => {
+              console.error('Permission check failed:', error)
+            })
+
+        } catch (error) {
+          console.error('Speech recognition initialization error:', error)
+          setIsSpeechSupported(false)
+        }
+      }
+
+      return () => {
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop()
+          } catch (error) {
+            // Ignore stop errors during cleanup
+          }
+        }
+      }
+    }
+  }, [])
 
   const commands: AgentCommand[] = [
     {
@@ -296,13 +370,34 @@ export function AgentInterface({
     setInput('')
   }
 
+  const toggleListening = () => {
+    if (!recognitionRef.current) {
+      alert('Speech recognition is not supported in your browser')
+      return
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop()
+    } else {
+      try {
+        recognitionRef.current.start()
+      } catch (error) {
+        console.error('Speech recognition error:', error)
+        setIsListening(false)
+      }
+    }
+    setIsListening(!isListening)
+  }
+
   const ChatContent = () => (
     <>
-      <div className={`flex-grow overflow-y-auto p-4 bg-base-200 rounded-lg mb-4 ${isExpanded ? 'h-[70vh]' : 'h-[200px]'}`}>
+      <div className={`flex-grow overflow-y-auto p-4 bg-base-200 rounded-lg mb-4 ${
+        isExpanded ? 'h-[45vh]' : 'h-[200px]'
+      }`}>
         {messages.map((msg, index) => (
           <div key={index} className={`chat ${msg.sender === 'bot' ? 'chat-start' : 'chat-end'} mb-2`}>
             <div className={`chat-bubble ${msg.sender === 'bot' ? 'chat-bubble-primary' : 'chat-bubble-secondary'}`}>
-              <pre className="whitespace-pre-wrap">{msg.message}</pre>
+              <pre className="whitespace-pre-wrap text-sm">{msg.message}</pre>
             </div>
           </div>
         ))}
@@ -322,6 +417,13 @@ export function AgentInterface({
           className="input input-bordered flex-grow"
           autoComplete="off"
         />
+        <button
+          onClick={toggleListening}
+          className={`btn ${isListening ? 'btn-error' : 'btn-primary'}`}
+          title={isListening ? 'Stop listening' : 'Start voice input'}
+        >
+          {isListening ? <FaMicrophoneSlash /> : <FaMicrophone />}
+        </button>
         <button onClick={handleSend} className="btn btn-primary">
           Send
         </button>
