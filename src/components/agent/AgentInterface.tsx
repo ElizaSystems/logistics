@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface ChatMessage {
@@ -32,6 +32,20 @@ export function AgentInterface({
   const router = useRouter()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [formattedMetrics, setFormattedMetrics] = useState<string[]>([])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const formatted = metrics.map(metric => {
+        const date = new Date(metric.timestamp)
+        const formattedDate = date.toLocaleDateString()
+        const formattedTime = date.toLocaleTimeString()
+        return `${metric.title}: ${metric.value} (${metric.change > 0 ? '+' : ''}${metric.change}%) ${formattedDate} ${formattedTime}`
+      })
+      setFormattedMetrics(formatted)
+    }
+  }, [metrics])
 
   const commands: AgentCommand[] = [
     {
@@ -124,9 +138,18 @@ export function AgentInterface({
       command: 'status',
       description: 'Get current system status',
       handler: () => {
-        return metrics.map(metric => 
-          `${metric.title}: ${metric.value} (${metric.change > 0 ? '+' : ''}${metric.change}% ${metric.timeframe})`
-        ).join('\n')
+        // Helper function for consistent formatting
+        const formatMetric = (metric: any) => {
+          const date = new Date(metric.timestamp)
+          const formattedDate = date.toLocaleDateString()
+          const formattedTime = date.toLocaleTimeString()
+          return `${metric.title}: ${metric.value} (${metric.change > 0 ? '+' : ''}${metric.change}%) ${formattedDate} ${formattedTime}`
+        }
+
+        if (typeof window === 'undefined') {
+          return metrics.map(formatMetric).join('\n')
+        }
+        return formattedMetrics.join('\n')
       }
     },
     {
@@ -196,7 +219,7 @@ export function AgentInterface({
   ]
 
   const processCommand = (input: string): string => {
-    const lowerInput = input.toLowerCase()
+    const lowerInput = input.toLowerCase().trim()
     
     if (lowerInput === 'help') {
       const categories = {
@@ -222,24 +245,41 @@ export function AgentInterface({
           ['warehouse capacity'].includes(cmd.command)
         )
       }
-
+  
       return Object.entries(categories)
         .map(([category, cmds]) => 
           `${category}:\n${cmds
-            .map(cmd => `  ${cmd.command}: ${cmd.description}`)
+            .map(cmd => `  ${cmd.command}${cmd.description ? ` - ${cmd.description}` : ''}`)
             .join('\n')}`
         )
         .join('\n\n')
     }
+  
+    if (lowerInput === 'status') {
+      // Use the same formatting helper as in the command handler
+      const formatMetric = (metric: any) => {
+        const date = new Date(metric.timestamp)
+        const formattedDate = date.toLocaleDateString()
+        const formattedTime = date.toLocaleTimeString()
+        return `${metric.title}: ${metric.value} (${metric.change > 0 ? '+' : ''}${metric.change}%) ${formattedDate} ${formattedTime}`
+      }
 
-    const matchedCommand = commands.find(cmd => 
-      lowerInput.includes(cmd.command.toLowerCase())
-    )
-
+      if (typeof window === 'undefined') {
+        return metrics.map(formatMetric).join('\n')
+      }
+      return formattedMetrics.join('\n')
+    }
+  
+    const matchedCommand = commands.find(cmd => {
+      const commandLower = cmd.command.toLowerCase()
+      // Allow exact matches or matches with additional parameters (a whitespace following the command string)
+      return lowerInput === commandLower || lowerInput.startsWith(`${commandLower} `)
+    })
+  
     if (matchedCommand) {
       return matchedCommand.handler()
     }
-
+  
     return 'Command not recognized. Type "help" to see available commands.'
   }
 
@@ -256,36 +296,81 @@ export function AgentInterface({
     setInput('')
   }
 
-  return (
-    <div className="card bg-base-100 shadow-xl">
-      <div className="card-body">
-        <h2 className="card-title">AI Command Interface</h2>
-        <div className="flex flex-col h-[200px] max-h-[200px]">
-          <div className="flex-grow overflow-y-auto p-4 bg-base-200 rounded-lg mb-4">
-            {messages.map((msg, index) => (
-              <div key={index} className={`chat ${msg.sender === 'bot' ? 'chat-start' : 'chat-end'} mb-2`}>
-                <div className={`chat-bubble ${msg.sender === 'bot' ? 'chat-bubble-primary' : 'chat-bubble-secondary'}`}>
-                  <pre className="whitespace-pre-wrap">{msg.message}</pre>
-                </div>
-              </div>
-            ))}
+  const ChatContent = () => (
+    <>
+      <div className={`flex-grow overflow-y-auto p-4 bg-base-200 rounded-lg mb-4 ${isExpanded ? 'h-[70vh]' : 'h-[200px]'}`}>
+        {messages.map((msg, index) => (
+          <div key={index} className={`chat ${msg.sender === 'bot' ? 'chat-start' : 'chat-end'} mb-2`}>
+            <div className={`chat-bubble ${msg.sender === 'bot' ? 'chat-bubble-primary' : 'chat-bubble-secondary'}`}>
+              <pre className="whitespace-pre-wrap">{msg.message}</pre>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Type a command... (try 'help')"
-              className="input input-bordered flex-grow"
-            />
-            <button onClick={handleSend} className="btn btn-primary">
-              Send
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              handleSend()
+            }
+          }}
+          placeholder="Type a command... (try 'help')"
+          className="input input-bordered flex-grow"
+          autoComplete="off"
+        />
+        <button onClick={handleSend} className="btn btn-primary">
+          Send
+        </button>
+      </div>
+    </>
+  )
+
+  return (
+    <>
+      <div className="card bg-base-100 shadow-xl">
+        <div className="card-body">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="card-title">AI Command Interface</h2>
+            <button 
+              onClick={() => setIsExpanded(true)} 
+              className="btn btn-ghost btn-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+              </svg>
             </button>
+          </div>
+          <div className="flex flex-col h-[200px]">
+            <ChatContent />
           </div>
         </div>
       </div>
-    </div>
+
+      {isExpanded && (
+        <div className="modal modal-open">
+          <div className="modal-box w-11/12 max-w-5xl h-5/6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-bold text-lg">AI Command Interface</h3>
+              <button 
+                onClick={() => setIsExpanded(false)}
+                className="btn btn-sm btn-ghost"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 9L15 15M15 9L9 15" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex flex-col flex-grow">
+              <ChatContent />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 

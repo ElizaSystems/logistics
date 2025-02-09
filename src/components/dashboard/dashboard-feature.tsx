@@ -1,7 +1,7 @@
 'use client'
 
 import { AppHero } from '../ui/ui-layout'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { TabView } from './tab-view'
 import { InventoryView } from './views/inventory-view'
 import { OrdersView } from './views/orders-view'
@@ -30,7 +30,7 @@ interface AIActivity {
   id: string
   agentName: string
   action: string
-  timestamp: Date
+  timestamp: string
   impact: string
   status: 'completed' | 'in-progress' | 'scheduled'
 }
@@ -55,6 +55,9 @@ interface VehicleStatus {
 }
 
 interface Agent {
+  action: any
+  updatedAt: string | number | Date
+  impact: any
   id: string
   name: string
   type: string
@@ -85,52 +88,27 @@ function MetricCardComponent({ title, value, change, timeframe }: MetricCard) {
   )
 }
 
-function AIActivityFeed() {
-  const [activities] = useState<AIActivity[]>([
-    {
-      id: '1',
-      agentName: 'InventoryBot',
-      action: 'Automated restocking initiated',
-      timestamp: new Date(),
-      impact: 'Optimizing inventory levels',
-      status: 'in-progress'
-    },
-    {
-      id: '2',
-      agentName: 'RouteOptimizer',
-      action: 'Route optimization completed',
-      timestamp: new Date(),
-      impact: 'Reduced delivery time by 15%',
-      status: 'completed'
-    }
-  ])
-
+function AIActivityFeed({ activities = [] }: { activities?: AIActivity[] }) {
   return (
-    <div className="card bg-base-200">
-      <div className="card-body">
-        <h2 className="card-title">AI Activity</h2>
-        <div className="space-y-4">
-          {activities.map((activity) => (
-            <div key={activity.id} className="flex items-start gap-4">
-              <div className={`badge ${
-                activity.status === 'completed' ? 'badge-success' :
-                activity.status === 'in-progress' ? 'badge-info' :
-                'badge-warning'
-              }`}>
-                {activity.status}
-              </div>
-              <div>
-                <div className="font-semibold">{activity.agentName}</div>
-                <div>{activity.action}</div>
-                <div className="text-sm opacity-70">{activity.impact}</div>
-                <div className="text-xs opacity-50">
-                  {activity.timestamp.toISOString()}
-                </div>
-              </div>
-            </div>
-          ))}
+    <div className="space-y-4">
+      {activities.map((activity) => (
+        <div key={activity.id} className="flex items-center gap-4">
+          <div className="flex-1">
+            <p className="font-medium">{activity.agentName}</p>
+            <p className="text-sm opacity-70">{activity.action}</p>
+            <p className="text-xs opacity-50" suppressHydrationWarning>
+              {new Date(activity.timestamp).toLocaleString()}
+            </p>
+          </div>
+          <div className={`badge ${
+            activity.status === 'completed' ? 'badge-success' : 
+            activity.status === 'in-progress' ? 'badge-warning' : 
+            'badge-info'
+          }`}>
+            {activity.status}
+          </div>
         </div>
-      </div>
+      ))}
     </div>
   )
 }
@@ -281,7 +259,6 @@ function FleetStatus() {
 export default function DashboardFeature() {
   const [activeTab, setActiveTab] = useState('overview')
   const [showDeployModal, setShowDeployModal] = useState(false)
-  
   const [agents] = useState<Agent[]>([
     {
       id: '1',
@@ -294,11 +271,14 @@ export default function DashboardFeature() {
       assignedArea: 'Warehouse A',
       decisions: 1234,
       successRate: 98,
-      learningProgress: 85
+      learningProgress: 85,
+      action: 'optimize',
+      updatedAt: new Date(),
+      impact: 'high'
     },
     {
       id: '2',
-      name: 'RouteOptimizer-1',
+      name: 'RouteOptimizer-1', 
       type: 'routing',
       status: 'active',
       performance: 92,
@@ -307,7 +287,10 @@ export default function DashboardFeature() {
       assignedArea: 'Fleet Management',
       decisions: 567,
       successRate: 94,
-      learningProgress: 78
+      learningProgress: 78,
+      action: 'recalculate',
+      updatedAt: new Date(),
+      impact: 'medium'
     }
   ])
 
@@ -353,6 +336,25 @@ export default function DashboardFeature() {
     }
   ])
 
+  const [activities] = useState<AIActivity[]>([
+    {
+      id: 'a1',
+      agentName: 'InventoryBot-Alpha',
+      action: 'Optimized stock levels for high-demand items',
+      timestamp: new Date().toISOString(),
+      impact: 'Improved inventory turnover',
+      status: 'completed'
+    },
+    {
+      id: 'a2',
+      agentName: 'RouteOptimizer-1',
+      action: 'Recalculated delivery routes for efficiency',
+      timestamp: new Date().toISOString(),
+      impact: 'Reduced delivery time by 15%',
+      status: 'in-progress'
+    }
+  ])
+
   const tabs = [
     {
       id: 'overview',
@@ -366,7 +368,7 @@ export default function DashboardFeature() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AIActivityFeed />
+            <AIActivityFeed activities={activities} />
             <AlertsFeed alerts={alerts} />
           </div>
 
