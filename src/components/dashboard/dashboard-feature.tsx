@@ -9,6 +9,7 @@ import { WarehousesView } from './views/warehouses-view'
 import { FleetView } from './views/fleet-view'
 import { AgentsView } from './views/agents-view'
 import { AnalyticsView } from './views/analytics-view'
+import { AgentInterface } from '../agent/AgentInterface'
 
 interface MetricCard {
   title: string
@@ -364,10 +365,9 @@ export default function DashboardFeature() {
 
   return (
     <div className="space-y-6">
-      <AppHero 
-        title="Logistics Command Center" 
-        subtitle="Real-time monitoring and autonomous management"
-      />
+      <div className="w-full max-w-4xl mx-auto">
+        <AgentInterface />
+      </div>
       <TabView tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   )

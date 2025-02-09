@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { AgentInterface } from '@/components/agent/AgentInterface'
 
 interface Agent {
   id: string
@@ -96,7 +97,7 @@ export function AgentsView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {agents.map((agent) => (
           <div key={agent.id} className="card bg-base-200 shadow-xl">
             <div className="card-body">

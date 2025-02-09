@@ -76,23 +76,50 @@ export function AppModal({
   const dialogRef = useRef<HTMLDialogElement>(null)
   
   useEffect(() => {
-    if (!dialogRef.current) return
-    if (show) {
-      dialogRef.current.showModal()
-    } else {
-      dialogRef.current.close()
+    console.log('Modal show state changed:', show)
+    const dialog = dialogRef.current
+    if (!dialog) {
+      console.log('No dialog ref')
+      return
     }
-  }, [show])
 
+    if (show) {
+      console.log('Showing modal...')
+      dialog.showModal()
+    } else {
+      console.log('Closing modal...')
+      dialog.close()
+    }
+
+    const handleClose = () => {
+      console.log('Dialog close event')
+      hide()
+    }
+    
+    dialog.addEventListener('close', handleClose)
+    return () => {
+      dialog.removeEventListener('close', handleClose)
+    }
+  }, [show, hide])
+
+  // Always render the dialog, but let CSS handle visibility
   return (
-    <dialog className="modal" ref={dialogRef}>
+    <dialog 
+      className={`modal ${show ? 'modal-open' : ''}`} 
+      ref={dialogRef}
+      onClose={hide}
+    >
       <div className="modal-box space-y-5">
         <h3 className="font-bold text-lg">{title}</h3>
         {children}
         <div className="modal-action">
           <div className="join space-x-2">
             {submit ? (
-              <button className="btn btn-xs lg:btn-md btn-primary" onClick={submit} disabled={submitDisabled}>
+              <button 
+                className="btn btn-xs lg:btn-md btn-primary" 
+                onClick={submit} 
+                disabled={submitDisabled}
+              >
                 {submitLabel || 'Save'}
               </button>
             ) : null}
