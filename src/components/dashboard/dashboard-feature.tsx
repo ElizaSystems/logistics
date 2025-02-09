@@ -11,6 +11,7 @@ import { AgentsView } from './views/agents-view'
 import { AnalyticsView } from './views/analytics-view'
 import { AgentInterface } from '../agent/AgentInterface'
 import { CommandHelp } from '../command-help/command-help'
+import { MobileHeader } from '../ui/mobile-header'
 
 interface MetricCard {
   title: string
@@ -258,6 +259,8 @@ function FleetStatus() {
 
 export default function DashboardFeature() {
   const [activeTab, setActiveTab] = useState('overview')
+  const [isMobile, setIsMobile] = useState(false)
+  const [showCommands, setShowCommands] = useState(false)
   const [showDeployModal, setShowDeployModal] = useState(false)
   const [agents] = useState<Agent[]>([
     {
@@ -411,28 +414,76 @@ export default function DashboardFeature() {
     },
   ]
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   return (
-    <div className="space-y-6">
-      <div className="w-full max-w-6xl mx-auto flex gap-6">
-        <div className="w-1/2">
-          <AgentInterface 
-            onDeployAgent={() => setShowDeployModal(true)}
-            onConfigureAgent={(agentId) => {
-              console.log('Configure agent:', agentId)
-            }}
-            onViewLogs={(agentId) => {
-              console.log('View logs:', agentId)
-            }}
-            metrics={metrics}
-            agents={agents}
-            alerts={alerts}
-          />
+    <div className="min-h-screen bg-base-100">
+      <MobileHeader 
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        tabs={tabs}
+      />
+      <div className="container mx-auto p-2 sm:p-4">
+        <h1 className="text-2xl font-bold mb-4 hidden lg:block">Logistics Dashboard</h1>
+        
+        {/* Show AI Command Interface only on Overview tab */}
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <div className="relative">
+              <AgentInterface 
+                onDeployAgent={() => setShowDeployModal(true)}
+                onConfigureAgent={(agentId) => {
+                  console.log('Configure agent:', agentId)
+                }}
+                onViewLogs={(agentId) => {
+                  console.log('View logs:', agentId)
+                }}
+                metrics={metrics}
+                agents={agents}
+                alerts={alerts}
+              />
+              {isMobile && (
+                <button
+                  onClick={() => setShowCommands(!showCommands)}
+                  className="fixed bottom-4 right-4 btn btn-circle btn-primary shadow-lg z-50"
+                  aria-label="Toggle commands"
+                >
+                  {showCommands ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+                    </svg>
+                  )}
+                </button>
+              )}
+            </div>
+            <div className={`
+              ${isMobile ? 'fixed inset-0 z-40 bg-base-100 transform transition-transform duration-300 ease-in-out' : ''}
+              ${isMobile && showCommands ? 'translate-x-0' : (isMobile ? 'translate-x-full' : '')}
+            `}>
+              <CommandHelp />
+            </div>
+          </div>
+        )}
+
+        {/* Tab Content */}
+        <div className="hidden lg:block">
+          <TabView tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
         </div>
-        <div className="w-1/2">
-          <CommandHelp />
+        <div className="lg:hidden">
+          {tabs.find(tab => tab.id === activeTab)?.content}
         </div>
       </div>
-      <TabView tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   )
 }

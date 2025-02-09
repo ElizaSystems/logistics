@@ -40,6 +40,7 @@ export function AgentInterface({
   const [isSpeechSupported, setIsSpeechSupported] = useState(false)
   const recognitionRef = useRef<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -121,6 +122,15 @@ export function AgentInterface({
         }
       }
     }
+  }, [])
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   const commands: AgentCommand[] = [
@@ -406,94 +416,78 @@ export function AgentInterface({
 
   const ChatContent = () => (
     <>
-      <div className={`flex-grow overflow-y-auto p-4 bg-base-200 rounded-lg mb-4 ${
-        isExpanded ? 'h-[45vh]' : 'h-[200px]'
+      <div className={`flex-grow overflow-y-auto p-2 sm:p-4 bg-base-200 rounded-lg mb-2 sm:mb-4 ${
+        isExpanded ? 'h-[calc(100vh-280px)] sm:h-[45vh]' : 'h-[300px] sm:h-[200px]'
       }`}>
         {messages.map((msg, index) => (
           <div key={index} className={`chat ${msg.sender === 'bot' ? 'chat-start' : 'chat-end'} mb-2`}>
-            <div className={`chat-bubble ${msg.sender === 'bot' ? 'chat-bubble-primary' : 'chat-bubble-secondary'}`}>
-              <pre className="whitespace-pre-wrap text-sm">{msg.message}</pre>
-              <div className="text-xs opacity-50 mt-1">
-                {new Date().toLocaleTimeString()}
+            <div className={`chat-bubble ${
+              msg.sender === 'bot' ? 'chat-bubble-primary' : 'chat-bubble-secondary'
+            } max-w-[75vw] sm:max-w-[400px]`}>
+              <pre className="whitespace-pre-wrap text-xs sm:text-sm break-words">{msg.message}</pre>
+              <div className="text-[10px] sm:text-xs opacity-50 mt-1">
+                {msg.timestamp.toLocaleTimeString()}
               </div>
             </div>
           </div>
         ))}
         <div ref={messagesEndRef} />
       </div>
-      <div className="flex gap-2">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault()
-              handleSend()
-            }
-          }}
-          placeholder="Type a command... (try 'help')"
-          className="input input-bordered flex-grow"
-          autoComplete="off"
-        />
-        {isSpeechSupported && (
-          <button
-            onClick={toggleListening}
-            className={`btn ${isListening ? 'btn-error' : 'btn-primary'}`}
-            title={isListening ? 'Stop listening' : 'Start voice input'}
-          >
-            {isListening ? <FaMicrophoneSlash className="h-5 w-5" /> : <FaMicrophone className="h-5 w-5" />}
+      <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleSend()
+              }
+            }}
+            placeholder={isMobile ? "Command... (try 'help')" : "Type a command... (try 'help')"}
+            className="input input-bordered flex-grow text-sm min-h-[2.5rem]"
+            autoComplete="off"
+          />
+          {isSpeechSupported && (
+            <button
+              onClick={toggleListening}
+              className={`btn btn-square ${isListening ? 'btn-error' : 'btn-primary'}`}
+              title={isListening ? 'Stop listening' : 'Start voice input'}
+            >
+              {isListening ? <FaMicrophoneSlash className="h-4 w-4" /> : <FaMicrophone className="h-4 w-4" />}
+            </button>
+          )}
+        </div>
+        <div className="flex justify-between items-center">
+          <button onClick={() => setIsExpanded(!isExpanded)} className="btn btn-ghost btn-sm">
+            {isExpanded ? 'Collapse' : 'Expand'}
           </button>
-        )}
-        <button onClick={handleSend} className="btn btn-primary">
-          Send
-        </button>
+          <button onClick={handleSend} className="btn btn-primary btn-sm px-8">
+            Send
+          </button>
+        </div>
       </div>
     </>
   )
 
   return (
-    <>
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="card-title">AI Command Interface</h2>
-            <button 
-              onClick={() => setIsExpanded(true)} 
+    <div className="card bg-base-100 shadow-xl">
+      <div className="card-body p-2 sm:p-6">
+        <div className="flex justify-between items-center mb-2 sm:mb-4">
+          <h2 className="card-title text-lg sm:text-xl">AI Command Interface</h2>
+          {!isMobile && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
               className="btn btn-ghost btn-sm"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-              </svg>
+              {isExpanded ? 'Collapse' : 'Expand'}
             </button>
-          </div>
-          <div className="flex flex-col h-[200px]">
-            <ChatContent />
-          </div>
+          )}
         </div>
+        <ChatContent />
       </div>
-
-      {isExpanded && (
-        <div className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-5xl h-5/6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-bold text-lg">AI Command Interface</h3>
-              <button 
-                onClick={() => setIsExpanded(false)}
-                className="btn btn-sm btn-ghost"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 9L15 15M15 9L9 15" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex flex-col flex-grow">
-              <ChatContent />
-            </div>
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   )
 }
 

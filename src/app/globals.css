@@ -17,3 +17,13 @@ body {
 .wallet-adapter-button {
     font-family: inherit !important;
 }
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-x: hidden;
+    scrollbar-width: none;
+  }
+}
