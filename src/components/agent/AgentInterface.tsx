@@ -14,12 +14,80 @@ interface AgentCommand {
   handler: () => string
 }
 
-export function AgentInterface() {
+export function AgentInterface({ 
+  onDeployAgent, 
+  onConfigureAgent, 
+  onViewLogs,
+  metrics,
+  agents,
+  alerts
+}: { 
+  onDeployAgent: () => void
+  onConfigureAgent: (agentId: string) => void
+  onViewLogs: (agentId: string) => void
+  metrics: any[]
+  agents: any[]
+  alerts: any[]
+}) {
   const router = useRouter()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
 
   const commands: AgentCommand[] = [
+    {
+      command: 'deploy agent',
+      description: 'Open the agent deployment modal',
+      handler: () => {
+        onDeployAgent()
+        return 'Opening agent deployment interface...'
+      }
+    },
+    {
+      command: 'configure agent',
+      description: 'Configure an existing agent (usage: configure agent <agent-name>)',
+      handler: () => {
+        const agentName = input.replace('configure agent', '').trim()
+        const agent = agents.find(a => a.name.toLowerCase() === agentName.toLowerCase())
+        if (agent) {
+          onConfigureAgent(agent.id)
+          return `Configuring agent: ${agent.name}`
+        }
+        return 'Agent not found. Please specify a valid agent name.'
+      }
+    },
+    {
+      command: 'view logs',
+      description: 'View agent logs (usage: view logs <agent-name>)',
+      handler: () => {
+        const agentName = input.replace('view logs', '').trim()
+        const agent = agents.find(a => a.name.toLowerCase() === agentName.toLowerCase())
+        if (agent) {
+          onViewLogs(agent.id)
+          return `Displaying logs for agent: ${agent.name}`
+        }
+        return 'Agent not found. Please specify a valid agent name.'
+      }
+    },
+    {
+      command: 'list agents',
+      description: 'Show all active agents',
+      handler: () => {
+        return agents.map(agent => 
+          `${agent.name} (${agent.type}) - ${agent.status}\n` +
+          `Last Action: ${agent.lastAction}\n` +
+          `Success Rate: ${agent.successRate}%\n`
+        ).join('\n')
+      }
+    },
+    {
+      command: 'alerts',
+      description: 'Show current system alerts',
+      handler: () => {
+        return alerts.map(alert => 
+          `[${alert.type.toUpperCase()}] ${alert.message}`
+        ).join('\n')
+      }
+    },
     {
       command: 'inventory',
       description: 'Check inventory status and manage stock levels',
@@ -45,14 +113,6 @@ export function AgentInterface() {
       }
     },
     {
-      command: 'deploy agent',
-      description: 'Deploy a new AI agent',
-      handler: () => {
-        // TODO: Integrate with DeployAgentModal from agents-feature.tsx
-        return 'Initiating agent deployment process...'
-      }
-    },
-    {
       command: 'analytics',
       description: 'View system analytics and insights',
       handler: () => {
@@ -64,11 +124,9 @@ export function AgentInterface() {
       command: 'status',
       description: 'Get current system status',
       handler: () => {
-        return `System Status:
-- Active Agents: 3
-- Fleet Utilization: 85%
-- Warehouse Capacity: 72%
-- On-Time Delivery: 94.2%`
+        return metrics.map(metric => 
+          `${metric.title}: ${metric.value} (${metric.change > 0 ? '+' : ''}${metric.change}% ${metric.timeframe})`
+        ).join('\n')
       }
     }
   ]

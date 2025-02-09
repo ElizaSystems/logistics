@@ -53,6 +53,20 @@ interface VehicleStatus {
   location: string
 }
 
+interface Agent {
+  id: string
+  name: string
+  type: string
+  status: string
+  performance: number
+  lastAction: string
+  nextAction: string
+  assignedArea: string
+  decisions: number
+  successRate: number
+  learningProgress: number
+}
+
 function MetricCardComponent({ title, value, change, timeframe }: MetricCard) {
   return (
     <div className="stats shadow">
@@ -109,7 +123,7 @@ function AIActivityFeed() {
                 <div>{activity.action}</div>
                 <div className="text-sm opacity-70">{activity.impact}</div>
                 <div className="text-xs opacity-50">
-                  {activity.timestamp.toLocaleTimeString()}
+                  {activity.timestamp.toISOString()}
                 </div>
               </div>
             </div>
@@ -137,7 +151,7 @@ function AlertsFeed({ alerts }: { alerts: AlertItem[] }) {
             >
               <span>{alert.message}</span>
               <span className="text-xs opacity-70">
-                {alert.timestamp.toLocaleTimeString()}
+                {alert.timestamp.toISOString()}
               </span>
             </div>
           ))}
@@ -265,6 +279,37 @@ function FleetStatus() {
 
 export default function DashboardFeature() {
   const [activeTab, setActiveTab] = useState('overview')
+  const [showDeployModal, setShowDeployModal] = useState(false)
+  
+  const [agents] = useState<Agent[]>([
+    {
+      id: '1',
+      name: 'InventoryBot-Alpha',
+      type: 'inventory',
+      status: 'active',
+      performance: 95,
+      lastAction: 'Optimized stock levels for high-demand items',
+      nextAction: 'Analyzing seasonal demand patterns',
+      assignedArea: 'Warehouse A',
+      decisions: 1234,
+      successRate: 98,
+      learningProgress: 85
+    },
+    {
+      id: '2',
+      name: 'RouteOptimizer-1',
+      type: 'routing',
+      status: 'active',
+      performance: 92,
+      lastAction: 'Recalculated delivery routes for efficiency',
+      nextAction: 'Adjusting for weather conditions',
+      assignedArea: 'Fleet Management',
+      decisions: 567,
+      successRate: 94,
+      learningProgress: 78
+    }
+  ])
+
   const [metrics] = useState<MetricCard[]>([
     {
       title: 'Total Orders',
@@ -365,8 +410,50 @@ export default function DashboardFeature() {
 
   return (
     <div className="space-y-6">
-      <div className="w-full max-w-4xl mx-auto">
-        <AgentInterface />
+      <div className="w-full max-w-6xl mx-auto flex gap-6">
+        <div className="w-2/3">
+          <AgentInterface 
+            onDeployAgent={() => setShowDeployModal(true)}
+            onConfigureAgent={(agentId) => {
+              console.log('Configure agent:', agentId)
+            }}
+            onViewLogs={(agentId) => {
+              console.log('View logs:', agentId)
+            }}
+            metrics={metrics}
+            agents={agents}
+            alerts={alerts}
+          />
+        </div>
+        <div className="w-1/3 card bg-base-200 p-4 self-start">
+          <h3 className="font-bold mb-2">Available Commands</h3>
+          <ul className="space-y-2 text-sm">
+            <li>
+              <span className="font-mono text-primary">deploy agent</span>
+              <p className="text-xs opacity-70">Deploy a new AI agent</p>
+            </li>
+            <li>
+              <span className="font-mono text-primary">configure agent [name]</span>
+              <p className="text-xs opacity-70">Configure an existing agent</p>
+            </li>
+            <li>
+              <span className="font-mono text-primary">view logs [name]</span>
+              <p className="text-xs opacity-70">View agent activity logs</p>
+            </li>
+            <li>
+              <span className="font-mono text-primary">list agents</span>
+              <p className="text-xs opacity-70">Show all active agents</p>
+            </li>
+            <li>
+              <span className="font-mono text-primary">alerts</span>
+              <p className="text-xs opacity-70">Show current system alerts</p>
+            </li>
+            <li>
+              <span className="font-mono text-primary">status</span>
+              <p className="text-xs opacity-70">Get current system status</p>
+            </li>
+          </ul>
+        </div>
       </div>
       <TabView tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
